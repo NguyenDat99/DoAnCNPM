@@ -13,6 +13,12 @@
 #define emptyString String()
 
 #define motor D8
+int   nhietDo=25;
+int thoiGianDung=3;//////////////////////
+int thoiGianKhongKichHoat=15;
+int  ErrActiveTime=0;
+int maKichHoat=1111;
+int maKhongKichHoat=0000;
 
 float TmpProcessing(){
   long tmp2=0,value;
@@ -41,11 +47,37 @@ int  Motor(int R){
  
 String rMotor(float tmp)
 {
-  if(tmp<25){  Motor(1); return "Đang bơm nước !";}
-  else {Motor(0); return "Không  bơm nước !";}
-}
+  if(tmp<nhietDo && ErrActiveTime<(thoiGianDung+1)){
+    Motor(1);
+    ErrActiveTime+=1; 
+    return "Đang bơm nước !";
+    }
+  else if (ErrActiveTime<(thoiGianDung+1)) {
+    Motor(0); 
+    ErrActiveTime=0;
+    return "Không  bơm nước !";
+    }
 
-//tai tai day https://github.com/debsahu/ESP-MQTT-AWS-IoT-Core/blob/master/doc/README.md
+   if (ErrActiveTime>thoiGianDung)
+        {
+          if(ErrActiveTime>thoiGianKhongKichHoat)
+            {  
+                Motor(1);  
+                return "Bơm nước(Nguoi Dung)!";        
+            }
+            else  if(ErrActiveTime==thoiGianKhongKichHoat)
+                 {
+                     Motor(0);
+                     ErrActiveTime=0;
+                     return "Dừng  bơm nước !";     
+                  } 
+            else{
+                  Motor(0);
+                  return "Lỗi nguồn nước!";
+              }
+        }  
+  }
+
 //nhap khoa secrets.h ▼
 #include "secrets.h"
 
@@ -104,7 +136,26 @@ void messageReceived(char *topic, byte *payload, unsigned int length)
   {
     Serial.print((char)payload[i]);
   }
-  Serial.println();
+  int A[20];
+  int S=0,n=0;
+  for (int i=length -4;i>=0;i--)
+    {
+      if((char)payload[i]>='0' &&(char)payload[i]<= '9')
+        {
+          A[n]=(char)payload[i];
+          n++;
+        }      
+    }
+    for (int i=n-1;i>=0;i--)        
+        S+=((int)A[i]-48)*pow(10,i);
+    
+      if(S==maKichHoat){
+          ErrActiveTime=thoiGianKhongKichHoat+1;
+       }
+      if(S==maKhongKichHoat)
+      {
+         ErrActiveTime=thoiGianKhongKichHoat;
+        }
 }
 
 void pubSubErr(int8_t MQTTErr)
@@ -208,9 +259,15 @@ void sendData(void)
   //nhiet do
   float tmp =TmpProcessing();
   state_reported["temperature"] = tmp;
+
+  String status=rMotor(TmpProcessing());
+  state_reported["status"]=status;
+  
   Serial.printf("Sending  [%s]: ", MQTT_PUB_TOPIC);
   Serial.println();
-  Serial.println(rMotor(TmpProcessing()));
+  
+  Serial.println(status);
+  
   serializeJson(root, Serial);
   Serial.println();
   char shadow[measureJson(root) + 1];
