@@ -13,6 +13,7 @@
 #define emptyString String()
 
 #define motor D8
+
 int   nhietDo=25;
 int thoiGianDung=3;//////////////////////
 int thoiGianKhongKichHoat=15;
