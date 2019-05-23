@@ -13,13 +13,12 @@ device
   .on('connect', function() {
     console.log('connect');
     device.subscribe('$aws/things/DoAnIotThing/shadow/update');
-    device.publish('$aws/things/DoAnIotThing/shadow/update', JSON.stringify({ test_data: 1}));
-  });
 
+    device.publish('$aws/things/DoAnIotThing/shadow/update', JSON.stringify({ test_data: 1}));
+
+  });
+  
 device
   .on('message', function(topic, payload) {
     console.log(payload.toString());
   });
-  app.listen(3000, function () {
-
-  })
