@@ -22,7 +22,7 @@ int thoiGianKhongKichHoat=15;
 int ErrActiveTime=0;
 int maKichHoat=1111;
 int maKhongKichHoat=0000;
-int thoiGianChoMoiTask=150000;
+int thoiGianChoMoiTask=5000;
 
 
 void led_Do_Sang()
@@ -146,8 +146,8 @@ String rMotor(float tmp)
 #endif
 
 const int MQTT_PORT = 8883;
-const char MQTT_SUB_TOPIC[] = "$aws/things/DoAnIotThing/shadow/update";
-const char MQTT_PUB_TOPIC[] = "$aws/things/DoAnIotThing/shadow/update";
+const char MQTT_SUB_TOPIC[] = "$aws/things/Pump/shadow/update";
+const char MQTT_PUB_TOPIC[] = "$aws/things/Pump/shadow/update";
 
 #ifdef USE_SUMMER_TIME_DST
 uint8_t DST = 1;
@@ -196,18 +196,37 @@ void messageReceived(char *topic, byte *payload, unsigned int length)
   {
     Serial.print((char)payload[i]);
   }
-  int A[20];
-  int S=0,n=0;
-  for (int i=length -4;i>=0;i--)
-    {
+  int thoiGianTask[20],cheDoBom[20],NhietDo[20];
+  int S=0,n=0,k1=0,k2=0;
+  // thoi gian cho 1 tien trinh
+   for (int i=length-1;i>=0;i--)        
+   {
+      if((char)payload[i]=='*'){k1=i;break;}
       if((char)payload[i]>='0' &&(char)payload[i]<= '9')
         {
-          A[n]=(char)payload[i];
+          thoiGianTask[n]=(char)payload[i];
+          n++;
+        }  
+    }
+    for (int i=n-1;i>=0;i--)
+    {        
+        S+=((int)thoiGianTask[i]-48)*pow(10,i);
+    }
+    thoiGianChoMoiTask=S;
+    S=0;
+    n=0;
+  // che do bom
+  for (int i=k1-1;i>=0;i--)
+    {
+      if((char)payload[i]=='!'){k2=i-1;break;}
+      if((char)payload[i]>='0' &&(char)payload[i]<= '9')
+        {
+          cheDoBom[n]=(char)payload[i];
           n++;
         }      
     }
     for (int i=n-1;i>=0;i--)        
-        S+=((int)A[i]-48)*pow(10,i);
+        S+=((int)cheDoBom[i]-48)*pow(10,i);
     
       if(S==maKichHoat){
           ErrActiveTime=thoiGianKhongKichHoat+1;
@@ -216,6 +235,27 @@ void messageReceived(char *topic, byte *payload, unsigned int length)
       {
          ErrActiveTime=thoiGianKhongKichHoat;
         }
+        S=0;
+        n=0;
+    //nhietDo
+    for (int i=k2;i>=0;i--)
+    {
+      if((char)payload[i]=='*')break;
+      if((char)payload[i]>='0' &&(char)payload[i]<= '9')
+        {
+          NhietDo[n]=(char)payload[i];
+          n++;
+        }      
+    }
+    for (int i=n-1;i>=0;i--)        
+        S+=((int)NhietDo[i]-48)*pow(10,i);
+    nhietDo=S;
+   Serial.println(" ");
+   Serial.println(" ");
+   Serial.println(S);
+   Serial.println(thoiGianChoMoiTask);
+   Serial.println(" ");
+   Serial.println(" ");
 }
 
 void pubSubErr(int8_t MQTTErr)
