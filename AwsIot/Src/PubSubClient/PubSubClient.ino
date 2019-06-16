@@ -13,13 +13,62 @@
 #define emptyString String()
 
 #define motor D8
+#define led_Do D2
+#define led_Vang D6
 
-int   nhietDo=25;
+int nhietDo=25;
 int thoiGianDung=3;//////////////////////
 int thoiGianKhongKichHoat=15;
-int  ErrActiveTime=0;
+int ErrActiveTime=0;
 int maKichHoat=1111;
 int maKhongKichHoat=0000;
+int thoiGianChoMoiTask=150000;
+
+
+void led_Do_Sang()
+{
+  digitalWrite(led_Do, HIGH);
+  }
+  void led_Vang_Sang()
+{
+  digitalWrite(led_Do, HIGH);
+  }
+void led_Do_ChopTat()
+{
+  digitalWrite(led_Do, HIGH);
+  delay(1000);
+  digitalWrite(led_Do, LOW);
+  delay(1000);  
+}
+void led_Vang_ChopTat()
+{
+  digitalWrite(led_Do, HIGH);
+  delay(1000);
+  digitalWrite(led_Do, LOW);
+  delay(1000);  
+}
+void hai_led_bat()
+  {
+    digitalWrite(led_Do, HIGH);
+    digitalWrite(led_Vang, HIGH);
+    }
+void hai_led_ChopTat(){
+  digitalWrite(led_Do, HIGH);
+  digitalWrite(led_Vang, HIGH);
+  delay(1000);
+  digitalWrite(led_Do, LOW);
+  digitalWrite(led_Vang, LOW);
+  delay(1000);    
+  }
+ void led_Do_tat(){
+  digitalWrite(led_Do, LOW);
+  }    
+ void led_Vang_tat(){
+  digitalWrite(led_Vang, LOW);
+  
+  }
+
+
 
 float TmpProcessing(){
   long tmp2=0,value;
@@ -50,11 +99,15 @@ String rMotor(float tmp)
 {
   if(tmp<nhietDo && ErrActiveTime<(thoiGianDung+1)){
     Motor(1);
+    led_Do_Sang();
+    led_Vang_tat();
     ErrActiveTime+=1; 
     return "Đang bơm nước !";
     }
   else if (ErrActiveTime<(thoiGianDung+1)) {
-    Motor(0); 
+    Motor(0);
+    led_Do_tat();
+    led_Vang_tat(); 
     ErrActiveTime=0;
     return "Không  bơm nước !";
     }
@@ -63,17 +116,23 @@ String rMotor(float tmp)
         {
           if(ErrActiveTime>thoiGianKhongKichHoat)
             {  
-                Motor(1);  
+                Motor(1);
+                led_Vang_Sang();
+                led_Do_tat();  
                 return "Bơm nước(Nguoi Dung)!";        
             }
             else  if(ErrActiveTime==thoiGianKhongKichHoat)
                  {
                      Motor(0);
                      ErrActiveTime=0;
+                     led_Vang_tat();
+                     led_Do_tat(); 
                      return "Dừng  bơm nước !";     
                   } 
             else{
                   Motor(0);
+                  led_Do_ChopTat();
+                  led_Vang_tat();
                   return "Lỗi nguồn nước!";
               }
         }  
@@ -188,6 +247,8 @@ void connectToMqtt(bool nonBlocking = false)
   Serial.print("MQTT connecting ");
   while (!client.connected())
   {
+    led_Vang_ChopTat();
+    led_Do_tat();
     if (client.connect(THINGNAME))
     {
       Serial.println("connected!");
@@ -220,6 +281,7 @@ void connectToWiFi(String init_str)
   while (WiFi.status() != WL_CONNECTED)
   {
     Serial.print(".");
+    hai_led_ChopTat();
     delay(1000);
   }
   if (init_str != emptyString)
@@ -283,7 +345,25 @@ void setup()
   Serial.begin(9600);
   pinMode(5,INPUT_PULLUP);
   pinMode(motor,OUTPUT);
+  pinMode(led_Do, OUTPUT);
+  pinMode(led_Vang, OUTPUT);
   digitalWrite(motor, LOW);
+  //
+  Serial.println(" ");
+  Serial.println(" ");
+  Serial.println("Bat dau SmartConfig");
+  WiFi.disconnect();
+  WiFi.mode(WIFI_STA);
+  delay(500);
+  WiFi.beginSmartConfig();
+  while(WiFi.status() != WL_CONNECTED) {
+    Serial.print(".");
+    delay(1000);
+  }
+  Serial.println("SmartConfig hoan thanh!");
+  ssid=WiFi.SSID();
+  pass=WiFi.psk();
+  WiFi.disconnect();
   //
   delay(2000);
   Serial.println();
@@ -295,7 +375,7 @@ void setup()
 #endif
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, pass);
-  connectToWiFi(String("Attempting to connect to SSID: ") + String(ssid));
+  connectToWiFi(String("Bat  dau ket noi den SSID: ") + String(ssid));
 
   NTPConnect();
 
@@ -322,11 +402,15 @@ void loop()
     checkWiFiThenMQTT();
     //checkWiFiThenMQTTNonBlocking();
     //checkWiFiThenReboot();
+    hai_led_bat();
+    delay(1000);
   }
   else
   {
+    led_Do_tat();
+    led_Vang_tat();
     client.loop();
-    if (millis() - lastMillis > 5000)
+    if (millis() - lastMillis > thoiGianChoMoiTask)
     {
       lastMillis = millis();
       sendData();
