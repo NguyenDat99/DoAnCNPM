@@ -22,7 +22,7 @@ int thoiGianKhongKichHoat=15;
 int ErrActiveTime=0;
 int maKichHoat=1111;
 int maKhongKichHoat=0000;
-int thoiGianChoMoiTask=5000;
+int thoiGianChoMoiTask=25000;
 
 
 void led_Do_Sang()
@@ -365,6 +365,9 @@ void sendData(void)
 
   String status=rMotor(TmpProcessing());
   state_reported["status"]=status;
+
+  state_reported["NhietDoTuoi"]=nhietDo;
+  state_reported["thoiGianChoMoiTask"]=thoiGianChoMoiTask;
   
   Serial.printf("Sending  [%s]: ", MQTT_PUB_TOPIC);
   Serial.println();
